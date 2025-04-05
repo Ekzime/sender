@@ -2,15 +2,16 @@ import os
 import asyncio
 import logging
 from config import settings
+from loger_manager import setup_logger
 from db.services.crud import create_account
 from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError, UserDeactivatedBanError, AuthKeyError
 
 
 
-logging.basicConfig(level=logging.DEBUG)
 logging.getLogger("telethon").setLevel(logging.CRITICAL) #(только критические ошибки)
-logger = logging.getLogger(__name__)
+logger = setup_logger()
+
 
 SESSION_DIR = 'telethonApp/sessions'
 TELETHON_HASH = settings.TELETHON_HASH
@@ -37,7 +38,7 @@ async def check_session(session_file):
             'first_name': me.first_name,
             'last_name': me.last_name,
             'username': me.username,
-            'phone': me.phone,
+            'phone': me.phone,  
         }
     except UserDeactivatedBanError:
         logger.error(f"check_session: [{session_name}] Аккаунт заблокирован.")

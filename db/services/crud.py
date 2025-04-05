@@ -1,13 +1,12 @@
-import logging
-from sqlalchemy import or_
+from loger_manager import setup_logger
+from sqlalchemy import delete, or_
 from datetime import datetime
 
 from sqlalchemy.sql.schema import Column
 from db.services.manager import get_db_session
 from db.models.model import Account, Message, Lead
 
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+logger = setup_logger()
 
 
 # ---------------------------------------#
@@ -93,7 +92,26 @@ def create_message(text: str):
         new_text = Message(text=text)
         db.add(new_text)
         db.commit() 
-        logger.info("create_message: Сообщение для спама записано!")
+        #logger.info("create_message: Сообщение для спама записано!")
+
+def get_all_message():
+    '''
+        Возвращает все сообщения из БД Messages
+    '''
+    with get_db_session() as db:
+        all_messages = db.query(Message).all()
+        result = []
+        for message in all_messages:
+            result.append(('text', message.text))
+        return result
+
+def delete_all_message():
+    '''
+        Удаляет все в таблице Message
+    '''
+    with get_db_session() as db:
+        db.query(Message).delete(synchronize_session=False)
+        db.commit()
 
 
 # ---------------------------------------#

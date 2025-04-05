@@ -5,13 +5,14 @@ import logging
 from config import settings
 from db.models.model import Account
 from telethon import TelegramClient
+from loger_manager import setup_logger
 from db.services.crud import update_account
 from db.services.manager import get_db_session
 from telethon.errors import UserDeactivatedBanError, AuthKeyError, FloodWaitError
 
-logging.basicConfig(level=logging.DEBUG)
 logging.getLogger("telethon").setLevel(logging.CRITICAL)  # только критические ошибки
-logger = logging.getLogger(__name__)
+logger = setup_logger()
+
 
 TELETHON_HASH = settings.TELETHON_HASH
 TELETHON_ID = settings.TELETHON_ID
@@ -113,7 +114,7 @@ async def check_and_sort_account():
         ]
     
     tasks = [check_account_on_valid(acc) for acc in accounts]
-    results = await asyncio.gather(*tasks)
+    results = await asyncio.gather(*tasks, return_exceptions=True)
 
     for account, status in zip(accounts, results):
         if account.get("status") == "ban":

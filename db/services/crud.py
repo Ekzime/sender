@@ -189,3 +189,12 @@ def get_all_leads():
                 'message_count': lead.message_count
             })
         return results
+
+def delete_all_leads():
+    """
+    Очищает таблицу с лидами
+    """
+    with get_db_session() as db:
+        db.query(Lead).delete(synchronize_session=False)
+        db.commit()
+

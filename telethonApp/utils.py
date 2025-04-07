@@ -1,4 +1,10 @@
-from db.services.crud import create_message, get_all_message, delete_all_message
+from db.services.crud import (
+    create_message,
+    get_all_message,
+    delete_all_message,
+    delete_all_leads,
+    get_all_leads
+)
 from loger_manager import setup_logger
 
 logger = setup_logger()
@@ -24,3 +30,11 @@ async def check_message():
 async def cmd_delete_all_message():
     delete_all_message()
     logger.warning("Все сообщения удалены из базы данных")
+
+async def cmd_delete_all_leads():
+    delete_all_leads()
+    logger.warning("Таблица с лидами была очищена")
+
+async def cmd_get_lead_count():
+    count_lead = len(get_all_leads())
+    logger.info(f'Количество лидов в БД: {count_lead}')

@@ -4,7 +4,8 @@ from db.models.model import Account, session
 from telethonApp.loadaccounts import process_session
 from telethonApp.checkvalidaccount import check_and_sort_account
 from telethonApp.parsinglead import join_and_parse_group
-from telethonApp.messageproces import *
+from telethonApp.utils import *
+from telethonApp.mailing import send_message
 
 # модули для оформления в консоли
 from rich.console import Console
@@ -30,8 +31,10 @@ async def main() -> None:
                 "[bold green]parsing[/] - Парсинг группы\n"
                 "[bold green]write_mes[/] - Записать сообщение для рассылки\n"
                 "[bold green]read_mes[/] - Просмотреть сообщения для рассылки\n"
-                "[bold green]del_mes[/] - Удалить все сообщения для рассылки\n"
                 "[bold green]send_mes[/] - Рассылка сообщений\n"
+                "[bold green]info_lead[/] - Просмотреть количество лидов в БД\n"
+                "[bold yellow]del_mes[/] - Удалить все сообщения для рассылки\n"
+                "[bold yellow]del_lead[/] - Очистить таблицу с лидами"
                 "[bold red]q[/] - Выход",
                 title="[bold cyan]Главное меню",
                 border_style="cyan",
@@ -55,7 +58,11 @@ async def main() -> None:
         elif event == "del_mes":
             await cmd_delete_all_message()
         elif event == "send_mes":
-            pass  # TODO: реализовать рассылку
+            await send_message()
+        elif event == "del_lead":
+            await cmd_delete_all_leads()
+        elif event == 'info_lead':
+            await cmd_get_lead_count()
         elif event == "q":
             break
         else:

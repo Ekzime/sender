@@ -5,14 +5,9 @@ import shutil
 from config import settings
 from loger_manager import setup_logger
 from db.services.crud import create_account as crud_create_account
+from telethon import TelegramClient
+from telethon.errors import UserDeactivatedBanError, AuthKeyError, SessionPasswordNeededError, FloodWaitError
 
-# --- Предполагается, что эти импорты у вас настроены ---
-# from config import settings
-# from loger_manager import setup_logger
-# from db.services.crud import create_account
-# -------------------------------------------------------
-
-# --- Заглушки для демонстрации ---
 class Settings:
     TELETHON_ID = settings.TELETHON_ID
     TELETHON_HASH = settings.TELETHON_HASH
@@ -20,19 +15,12 @@ class Settings:
 settings = Settings()
 
 def create_account(string_session: str, phone: str, purpose: str):
-    """Заглушка для функции добавления аккаунта в БД."""
     crud_create_account(
         phone=phone,
         purpose=purpose,
         string_session=string_session
     )
     logger.info(f"[DB Stub] Добавление аккаунта: Телефон={phone}, Сессия={string_session}, Назначение={purpose}")
-
-    
-
-# Импортируем реальные классы Telethon
-from telethon import TelegramClient
-from telethon.errors import UserDeactivatedBanError, AuthKeyError, SessionPasswordNeededError, FloodWaitError
 
 # Настраиваем логгер
 logging.getLogger("telethon").setLevel(logging.CRITICAL)
@@ -209,8 +197,6 @@ async def process_sessions():
                 print("Неверный выбор. Пожалуйста, введите 1 или 2.")
 
         # Добавляем задачу проверки сессии в список
-        # Передаем session_path, purpose и target_dir в lambda или вспомогательную функцию,
-        # чтобы сохранить контекст для каждой задачи.
         async def check_and_process(s_path, s_purpose, t_dir, s_file_name):
             account_info = await check_session(s_path)
             if account_info:
@@ -222,7 +208,7 @@ async def process_sessions():
 
                     # Сохраняем аккаунт в БД
                     create_account(
-                        string_session=account_info['session'], # Используем только имя файла
+                        string_session=account_info['session'], 
                         phone=account_info['phone'],
                         purpose=s_purpose
                     )

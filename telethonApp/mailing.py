@@ -151,7 +151,7 @@ async def send_message():
             lead_index += 1
             leads_since_last_message += 1
             save_state(current_account_index, lead['telegram_id'])
-    
+
             # Смена сообщения после указанного количества лидов
             if leads_since_last_message >= LEADS_PER_MESSAGE:
                 leads_since_last_message = 0
@@ -164,4 +164,4 @@ async def send_message():
             logger.error(f"Ошибка с аккаунтом {account['phone']}: {ex}")
             current_account_index = (current_account_index + 1) % total_accounts
 
-    logger.info("Рассылка завершена.")
+    logger.info("Рассылка завершена.")  

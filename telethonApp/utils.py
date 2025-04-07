@@ -36,5 +36,8 @@ async def cmd_delete_all_leads():
     logger.warning("Таблица с лидами была очищена")
 
 async def cmd_get_lead_count():
-    count_lead = len(get_all_leads())
+    leads = get_all_leads()
+    if not leads:
+        return
+    count_lead = len(leads)
     logger.info(f'Количество лидов в БД: {count_lead}')

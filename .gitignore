@@ -1,3 +1,11 @@
 *sessions/
 *venv/
 *TODO
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+.env
+*.env
+.idea/
+.vscode/

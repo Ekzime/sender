@@ -178,7 +178,7 @@ def get_all_leads():
     with get_db_session() as db:
         leads = db.query(Lead).all()
         if not leads:
-            logger.info("get_all_leads: В таблице Leads сейчас пусто.")
+            logger.warning("В таблице Leads сейчас пусто.")
             return
         results = []
         for lead in leads:

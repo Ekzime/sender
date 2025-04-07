@@ -34,7 +34,7 @@ async def main() -> None:
                 "[bold green]send_mes[/] - Рассылка сообщений\n"
                 "[bold green]info_lead[/] - Просмотреть количество лидов в БД\n"
                 "[bold yellow]del_mes[/] - Удалить все сообщения для рассылки\n"
-                "[bold yellow]del_lead[/] - Очистить таблицу с лидами"
+                "[bold yellow]del_lead[/] - Очистить таблицу с лидами\n"
                 "[bold red]q[/] - Выход",
                 title="[bold cyan]Главное меню",
                 border_style="cyan",

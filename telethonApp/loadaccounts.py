@@ -121,16 +121,13 @@ async def process_sessions():
         ]
     except FileNotFoundError:
         logger.error(f"Базовая директория сессий не найдена: {BASE_SESSION_DIR}")
-        print(f"Ошибка: Директория {BASE_SESSION_DIR} не найдена.")
         return
     except Exception as e:
         logger.error(f"Ошибка при чтении директории {BASE_SESSION_DIR}: {e}")
-        print(f"Произошла ошибка при доступе к директории сессий.")
         return
 
 
     if not all_session_files:
-        print(f"Файлы сессий (.session) не найдены в директории: {BASE_SESSION_DIR}")
         logger.warning(f"В директории {BASE_SESSION_DIR} не найдено .session файлов.")
         return
 

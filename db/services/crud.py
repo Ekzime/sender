@@ -102,8 +102,9 @@ def get_all_message():
         all_messages = db.query(Message).all()
         result = []
         for message in all_messages:
-            result.append(('text', message.text))
+            result.append({'text': message.text})
         return result
+
 
 def delete_all_message():
     '''
@@ -151,7 +152,7 @@ def update_lead(lead, **kwargs):
     if not lead_telegram_id:
         raise ValueError("update_lead: Невозможно определить идентификатор аккаунта.")
     with get_db_session() as db:
-        db_lead = db.query(Lead).filter_by(phone=lead_telegram_id).first()
+        db_lead = db.query(Lead).filter_by(telegram_id=lead_telegram_id).first()
         if not db_lead:
             return None
 
@@ -163,9 +164,28 @@ def update_lead(lead, **kwargs):
             db.refresh(db_lead)
             logger.info(
                 f"update_lead: Аккаунт id={db_lead} обновлён, поля={list(kwargs.keys())}"
-            )
+            )   
             return db_lead
         except Exception as e:
             db.rollback()
             logger.error(f"update_lead: Ошибка при обновлении аккаунта: {e}")
             raise e
+
+def get_all_leads():
+    """
+        Возвращает список всех записей из таблицы Lead
+    """
+    with get_db_session() as db:
+        leads = db.query(Lead).all()
+        if not leads:
+            logger.info("get_all_leads: В таблице Leads сейчас пусто.")
+            return
+        results = []
+        for lead in leads:
+            results.append({
+                'username': lead.username,
+                'phone': lead.phone,
+                'telegram_id': lead.telegram_id,
+                'message_count': lead.message_count
+            })
+        return results

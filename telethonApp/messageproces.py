@@ -14,8 +14,9 @@ async def load_message():
 async def check_message():
     messages = get_all_message()
     if messages:
-        for k, v in messages:
-            print(f"text: {v}\n")
+        for msg_dict in messages:
+            k, v = next(iter(msg_dict.items()))
+            print(f"{k}: {v}")
     else:
         logger.warning("Нет сообщений для просмотра!")
 

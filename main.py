@@ -4,7 +4,7 @@ from db.models.model import Account, session
 from telethonApp.loadaccounts import process_session
 from telethonApp.checkvalidaccount import check_and_sort_account
 from telethonApp.parsinglead import join_and_parse_group
-from telethonApp.loadmessage import *
+from telethonApp.messageproces import *
 
 # модули для оформления в консоли
 from rich.console import Console

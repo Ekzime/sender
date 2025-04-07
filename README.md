@@ -59,8 +59,8 @@
 3.  **Настройка Базы Данных:**
     * В файле .env вставить две строки с вашими ключами: 
     ```bash
-    TELETHON_ID = "123"
-    TELETHON_HASH = "123"
+    TELETHON_ID = "your_id"
+    TELETHON_HASH = "your_hash"
     
     * В файле .env нужно вставить строку SQL_URL = "mysql+pymysql://root@localhost:3306/your_db_name" в которой нужно заменить sender на имя вашей баззы. Перед этим нужно скачать XAMPP, и запустить sql & apache
 

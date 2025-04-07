@@ -6,7 +6,7 @@ from db.services.crud import create_lead, get_all_accounts_by_flag
 from telethon import TelegramClient
 from telethon.tl.functions.channels import JoinChannelRequest
 from telethon.tl.functions.messages import ImportChatInviteRequest
-from telethon.errors.rpcerrorlist import UserAlreadyParticipantError, UserAlreadyInvitedError, SessionPasswordNeededError
+from telethon.errors.rpcerrorlist import UserAlreadyParticipantError, UserAlreadyInvitedError
 from telethonApp.checkvalidaccount import get_session_file_path
 
 from pyfiglet import Figlet

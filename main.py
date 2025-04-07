@@ -1,7 +1,7 @@
 import asyncio
 from loger_manager import setup_logger
 from db.models.model import Account, session
-from telethonApp.loadaccounts import process_session
+from telethonApp.loadaccounts import process_sessions
 from telethonApp.checkvalidaccount import check_and_sort_account
 from telethonApp.parsinglead import join_and_parse_group
 from telethonApp.utils import *
@@ -23,7 +23,7 @@ async def main() -> None:
     console.clear()
     while True:
         ascii_banner = pyfiglet.figlet_format(" E X O D U S ")
-        print(f"\033[92m{ascii_banner}\033[0m")  # Зеленым цветом
+        print(f"\033[92m{ascii_banner}\033[0m")  
         console.print(
             Panel.fit(
                 "[bold green]load_acc[/] - Загрузить сессии с файла .session\n"
@@ -46,7 +46,7 @@ async def main() -> None:
         console.clear()
 
         if event == "load_acc":
-            await process_session()
+            await process_sessions()
         elif event == "check_acc":
             await check_and_sort_account()
         elif event == "parsing":

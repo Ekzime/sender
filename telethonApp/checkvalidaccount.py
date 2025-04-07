@@ -112,13 +112,30 @@ async def check_and_sort_account():
             }
             for acc in db.query(Account).all()
         ]
+        if not accounts:
+            logger.warning('В базе нет зарегистрированых аккаунтов!')
     
     tasks = [check_account_on_valid(acc) for acc in accounts]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
+    live_count = 0
+    failed_count = 0    
+
     for account, status in zip(accounts, results):
-        if account.get("status") == "ban":
-            # logger.warning(f"Пропущен аккаунт {account['phone']} — ранее был забанен.")
-            continue
-        update_account({"phone": account["phone"]}, status=status)
-        await move_session_file(account=account, status=status)
+        for account, status in zip(accounts, results):
+            # Если в базе аккаунт уже помечен как забаненный, пропускаем его и считаем в failed_count.
+            if account.get("status") == "ban":
+                failed_count += 1
+                continue
+
+            # Обновляем статус аккаунта в БД
+            update_account({"phone": account["phone"]}, status=status)
+            await move_session_file(account=account, status=status)
+
+            # Считаем по новому статусу
+            if status == "live":
+                live_count += 1
+            else:
+                failed_count += 1
+
+    logger.info(f"Обработка завершена \n Живых аккаунтов: {live_count} \n Отлетело: {failed_count}")

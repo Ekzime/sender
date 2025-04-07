@@ -140,8 +140,8 @@ async def send_message():
                 await asyncio.sleep(e.seconds)
             except errors.PeerFloodError:
                 # Обработка ошибки PeerFlood
-                logger.error(f"PeerFlood на {account['phone']}, статус изменён.")
-                update_account({'phone': account['phone']}, status='shadow')
+                logger.error(f"PeerFlood на {account['phone']}, аккаунт остывает.")
+                await asyncio.sleep(ACCOUNT_TIMEOUT * 2)
             except Exception as e:
                 # Общая обработка других исключений
                 logger.error(f"Ошибка отправки через {account['phone']}: {e}")

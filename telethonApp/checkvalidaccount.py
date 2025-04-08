@@ -3,11 +3,12 @@ import shutil
 import asyncio
 import logging
 from config import settings
+from sqlalchemy import select
 from db.models.model import Account
 from telethon import TelegramClient
 from loger_manager import setup_logger
 from db.services.crud import update_account
-from db.services.manager import get_db_session
+from db.services.manager import get_db_async_session
 from telethon.errors import UserDeactivatedBanError, AuthKeyError, FloodWaitError
 
 logging.getLogger("telethon").setLevel(logging.CRITICAL)  # только критические ошибки
@@ -102,18 +103,21 @@ async def check_and_sort_account():
     Получает аккаунты из базы, проверяет их статус и обновляет запись в БД.
     Затем перемещает файл сессии в папку, соответствующую новому статусу.
     """
-    with get_db_session() as db:
+    async with get_db_async_session() as db:
+        result = await db.execute(select(Account))
+        accounts_objs = await result.scalars().all()
         accounts = [
             {
                 "phone": acc.phone,
                 "string_session": acc.string_session,
                 "purpose": acc.purpose,
-                "status": acc.status  
+                "status": acc.status
             }
-            for acc in db.query(Account).all()
+            for acc in accounts_objs
         ]
         if not accounts:
-            logger.warning('В базе нет зарегистрированых аккаунтов!')
+            logger.warning("В базе нет зарегистрированых аккаунтов!")
+        return accounts
     
     tasks = [check_account_on_valid(acc) for acc in accounts]
     results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -129,7 +133,7 @@ async def check_and_sort_account():
                 continue
 
             # Обновляем статус аккаунта в БД
-            update_account({"phone": account["phone"]}, status=status)
+            await update_account({"phone": account["phone"]}, status=status)
             await move_session_file(account=account, status=status)
 
             # Считаем по новому статусу

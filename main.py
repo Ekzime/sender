@@ -1,6 +1,7 @@
 import asyncio
+import sys
 from loger_manager import setup_logger
-from db.models.model import Account, session
+from db.models.model import  engine, init_db
 from telethonApp.loadaccounts import process_sessions
 from telethonApp.checkvalidaccount import check_and_sort_account
 from telethonApp.parsinglead import join_and_parse_group
@@ -13,12 +14,14 @@ from rich.panel import Panel
 from rich.prompt import Prompt
 import pyfiglet
 
+if sys.platform.startswith('win'):
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
 logger = setup_logger()
 
 console = Console()
 
-
-def banner_menu():
+async def banner_menu():
     ascii_banner = pyfiglet.figlet_format(" E X O D U S ")
     print(f"\033[92m{ascii_banner} v1.0\033[0m")  
     console.print(
@@ -40,8 +43,9 @@ def banner_menu():
 # Начало работы
 async def main() -> None:
     console.clear()
+    await init_db(engine)
     while True:
-        banner_menu()
+        await banner_menu()
         print("\033[96m[?]\033[0m \033[92mВыберите действие:\033[0m ")
         event = input("\033[96m └─>\033[0m \033[92m\033[0m ")
         console.clear()
@@ -70,6 +74,8 @@ async def main() -> None:
             logger.warning("Нет такой команды")
 
     logger.info("Остановка программы")
+    await asyncio.sleep(0.1)
+    await engine.dispose()
 
 
 if __name__ == "__main__":

@@ -1,9 +1,9 @@
 from loger_manager import setup_logger
 from sqlalchemy import delete, or_
 from datetime import datetime
-
+from sqlalchemy import select
 from sqlalchemy.sql.schema import Column
-from db.services.manager import get_db_session
+from db.services.manager import get_db_async_session
 from db.models.model import Account, Message, Lead
 
 logger = setup_logger()
@@ -12,15 +12,16 @@ logger = setup_logger()
 # ---------------------------------------#
 #              CRUD Accounts            #
 # ---------------------------------------#
-def create_account(
+async def create_account(
     phone: str,
     string_session: str,
     purpose: str,
     f2a: str = "",
-) -> None | dict[str, Column[str]]:
+) -> None | dict[str, str]:
     "Создает запись в таблице Accounts"
-    with get_db_session() as db:
-        acc = db.query(Account).filter_by(phone=phone).first()
+    async with get_db_async_session() as db:
+        result = await db.execute(select(Account).filter_by(phone=phone))
+        acc = result.scalar_one_or_none()
         if acc:
             logger.error(
                 f"create_account: Аккаунт уже есть в базе со статусом: {acc.status}"
@@ -34,18 +35,17 @@ def create_account(
             f2a=f2a,
         )
         db.add(new_acc)
-        db.commit()
-        db.refresh(new_acc)
         return {
             "phone": new_acc.phone,
             "string_session": new_acc.string_session,
             "f2a": new_acc.f2a,
         }
     
-def get_all_accounts_by_flag(purpose: str, status='live'):
+async def get_all_accounts_by_flag(purpose: str, status='live'):
     "Возвращает аккаунты все аккаунты по флагу purpose со статусом live"
-    with get_db_session() as db:
-        obj  = db.query(Account).filter_by(status=status, purpose=purpose).all()
+    async with get_db_async_session() as db:
+        result  = await db.execute(select(Account).filter_by(status=status, purpose=purpose))
+        obj = result.scalars().all()
         accounts = []
         for acc in obj:
             accounts.append({
@@ -58,13 +58,14 @@ def get_all_accounts_by_flag(purpose: str, status='live'):
     
 
 
-def update_account(acc, **kwargs):
+async def update_account(acc, **kwargs):
     "Обновляет поля обьекта в таблице Account"
     acc_phone = acc.phone if hasattr(acc, "phone") else acc.get("phone")
     if not acc_phone:
         raise ValueError("Невозможно определить идентификатор аккаунта.")
-    with get_db_session() as db:
-        db_acc = db.query(Account).filter_by(phone=acc_phone).first()
+    async with get_db_async_session() as db:
+        result = await db.execute(select(Account).filter_by(phone=acc_phone))
+        db_acc = result.scalar_one_or_none()
         if not db_acc:
             return None
 
@@ -72,59 +73,53 @@ def update_account(acc, **kwargs):
             for k, v in kwargs.items():
                 setattr(db_acc, k, v)
             db_acc.updated_at = datetime.utcnow()
-            db.commit()
-            db.refresh(db_acc)
             #logger.info(f"Аккаунт id={acc_phone} обновлён, поля={list(kwargs.keys())}")
             return db_acc
         except Exception as e:
-            db.rollback()
             logger.error(f"Ошибка при обновлении аккаунта: {e}")
             raise e
 
 # ---------------------------------------#
 #              CRUD Messages            #
 # ---------------------------------------#
-def create_message(text: str):
+async def create_message(text: str):
     """
     Создаеь заптсь в таблице Messages
     """
-    with get_db_session() as db:
+    async with get_db_async_session() as db:
         new_text = Message(text=text)
         db.add(new_text)
-        db.commit() 
         #logger.info("create_message: Сообщение для спама записано!")
 
-def get_all_message():
+async def get_all_message():
     '''
         Возвращает все сообщения из БД Messages
     '''
-    with get_db_session() as db:
-        all_messages = db.query(Message).all()
-        result = []
-        for message in all_messages:
-            result.append({'text': message.text})
-        return result
+    async with get_db_async_session() as db:
+        result = await db.execute(select(Message))
+        all_messages = result.scalars().all()
+        return [{'text': message.text} for message in all_messages]
 
 
-def delete_all_message():
+async def delete_all_message():
     '''
         Удаляет все в таблице Message
     '''
-    with get_db_session() as db:
-        db.query(Message).delete(synchronize_session=False)
-        db.commit()
+    async with get_db_async_session() as db:
+        await db.execute(delete(Message))
 
 
 # ---------------------------------------#
 #              CRUD LEAD                #
 # ---------------------------------------#
-def create_lead(username: str, phone: str, telegram_id: str):
+async def create_lead(username: str, phone: str, telegram_id: str):
     """
     Создает запись в таблице Lead
     """
-    with get_db_session() as db:
+    async with get_db_async_session() as db:
         # Ищем лида по телефону или telegram_id
-        lead = db.query(Lead).filter(Lead.telegram_id == telegram_id).first()
+        result = await db.execute(select(Lead).filter(Lead.telegram_id == telegram_id))
+        lead = result.scalar_one_or_none()
 
         if lead:
             logger.error(f"create_lead: Лид уже есть в базе.")
@@ -132,17 +127,14 @@ def create_lead(username: str, phone: str, telegram_id: str):
         try:
             new_lead = Lead(username=username, phone=phone, telegram_id=telegram_id)
             db.add(new_lead)
-            db.commit()
-            db.refresh(new_lead)
             return True
         except Exception as e:
-            db.rollback()
             logger.error(f"create_lead: Ошибка при создании лида: {e}")
             return False
 
 
 
-def update_lead(lead, **kwargs):
+async def update_lead(lead, **kwargs):
     """
     Обновляет параметры обьекта в таблице Lead
     """
@@ -151,8 +143,9 @@ def update_lead(lead, **kwargs):
     )
     if not lead_telegram_id:
         raise ValueError("update_lead: Невозможно определить идентификатор аккаунта.")
-    with get_db_session() as db:
-        db_lead = db.query(Lead).filter_by(telegram_id=lead_telegram_id).first()
+    async with get_db_async_session() as db:
+        result = await db.execute(select(Lead).filter_by(telegram_id=lead_telegram_id))
+        db_lead = result.scalar_one_or_none()
         if not db_lead:
             return None
 
@@ -160,41 +153,37 @@ def update_lead(lead, **kwargs):
             for k, v in kwargs.items():
                 setattr(db_lead, k, v)
             db_lead.updated_at = datetime.utcnow()
-            db.commit()
-            db.refresh(db_lead)
             logger.info(
                 f"update_lead: Аккаунт id={db_lead} обновлён, поля={list(kwargs.keys())}"
             )   
             return db_lead
         except Exception as e:
-            db.rollback()
             logger.error(f"update_lead: Ошибка при обновлении аккаунта: {e}")
             raise e
 
-def get_all_leads():
+async def get_all_leads():
     """
         Возвращает список всех записей из таблицы Lead
     """
-    with get_db_session() as db:
-        leads = db.query(Lead).all()
+    async with get_db_async_session() as db:
+        result = await db.execute(select(Lead))
+        leads = result.scalars().all()
         if not leads:
             logger.warning("В таблице Leads сейчас пусто.")
             return
-        results = []
+        leads_list = []
         for lead in leads:
-            results.append({
+            leads_list.append({
                 'username': lead.username,
                 'phone': lead.phone,
                 'telegram_id': lead.telegram_id,
                 'message_count': lead.message_count
             })
-        return results
+        return leads_list
 
-def delete_all_leads():
+async def delete_all_leads():
     """
     Очищает таблицу с лидами
     """
-    with get_db_session() as db:
-        db.query(Lead).delete(synchronize_session=False)
-        db.commit()
-
+    async with get_db_async_session() as db:
+        await db.execute(delete(Lead))

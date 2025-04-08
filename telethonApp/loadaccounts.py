@@ -14,6 +14,7 @@ from telethon.errors import (
 )
 
 
+# Определяем настройки
 class Settings:
     TELETHON_ID = settings.TELETHON_ID
     TELETHON_HASH = settings.TELETHON_HASH
@@ -35,12 +36,11 @@ async def create_account(string_session: str, phone: str, purpose: str):
 logging.getLogger("telethon").setLevel(logging.CRITICAL)
 logger = setup_logger()
 
-# Константы и пути
+# Пути к директориям
 BASE_SESSION_DIR = "telethonApp/sessions"
 PARSING_SESSION_DIR = os.path.join(BASE_SESSION_DIR, "parsing")
 MAILING_SESSION_DIR = os.path.join(BASE_SESSION_DIR, "mailing")
 
-# Убедимся, что директории существуют
 os.makedirs(PARSING_SESSION_DIR, exist_ok=True)
 os.makedirs(MAILING_SESSION_DIR, exist_ok=True)
 
@@ -50,18 +50,10 @@ TELETHON_HASH = settings.TELETHON_HASH
 
 async def check_session(session_file_path: str) -> dict | None:
     """
-    Подключаемся к Telegram и получаем информацию об аккаунте из файла сессии.
-    Если не авторизован, заблокирован или файл сессии некорректный — возвращаем None.
-
-    Args:
-        session_file_path (str): Полный путь к файлу сессии.
-
-    Returns:
-        dict | None: Словарь с информацией об аккаунте или None в случае ошибки/неавторизации.
+    Подключаемся к Telegram через данный файл сессии и получаем информацию об аккаунте.
+    Если сессия не авторизована, устарела или аккаунт заблокирован — возвращаем None.
     """
-    session_name = os.path.basename(session_file_path).replace(
-        ".session", ""
-    )  # Получаем имя сессии из пути
+    session_name = os.path.basename(session_file_path).replace(".session", "")
     client = TelegramClient(session_file_path, TELETHON_ID, TELETHON_HASH)
     account_info = None
 
@@ -71,7 +63,7 @@ async def check_session(session_file_path: str) -> dict | None:
 
         if not await client.is_user_authorized():
             logger.warning(f"[{session_name}] Сессия не авторизована или устарела.")
-            return None  # Пока просто пропускаем неавторизованные
+            return None
 
         me = await client.get_me()
         if me:
@@ -79,19 +71,18 @@ async def check_session(session_file_path: str) -> dict | None:
                 f"[{session_name}] Успешно подключен аккаунт: {me.first_name} (@{me.username}), ID: {me.id}, Phone: {me.phone}"
             )
             account_info = {
-                "session": session_name,  # Сохраняем только имя файла без пути и расширения
+                "session": session_name,
                 "user_id": me.id,
                 "first_name": me.first_name,
                 "last_name": me.last_name,
                 "username": me.username,
                 "phone": me.phone,
-                "full_path": session_file_path,  # Сохраняем полный путь для перемещения
+                "full_path": session_file_path,
             }
         else:
             logger.error(
                 f"[{session_name}] Не удалось получить информацию об аккаунте (get_me вернул None)."
             )
-
     except UserDeactivatedBanError:
         logger.error(
             f"[{session_name}] Аккаунт заблокирован (UserDeactivatedBanError)."
@@ -110,7 +101,7 @@ async def check_session(session_file_path: str) -> dict | None:
         logger.error(
             f"[{session_name}] Непредвиденная ошибка при проверке сессии: {e}",
             exc_info=True,
-        )  # Логируем traceback
+        )
     finally:
         if client.is_connected():
             await client.disconnect()
@@ -120,12 +111,12 @@ async def check_session(session_file_path: str) -> dict | None:
 
 async def process_sessions():
     """
-    Сканирует базовую директорию на наличие .session файлов,
+    Сканирует базовую директорию на наличие .session-файлов,
     предлагает пользователю выбрать сессии для обработки,
     запрашивает назначение для каждой выбранной сессии,
     проверяет сессию, перемещает файл и сохраняет данные в БД.
     """
-    # 1. Ищем все .session-файлы в базовой директории
+    # 1. Поиск .session файлов
     try:
         all_session_files = [
             f
@@ -148,14 +139,16 @@ async def process_sessions():
     for i, fname in enumerate(all_session_files):
         print(f"\033[96m[?]\033[0m \033[92m {i + 1}. {fname} \033[0m ")
 
-    # 2. Запрашиваем у пользователя, какие сессии обработать
+    # 2. Асинхронно получаем ввод пользователя для выбора сессий
     selected_indices = set()
     while True:
         try:
-            print(
-                f"\033[96m\n[?]\033[0m \033[92mВведите номера сессий для обработки через запятую или пробел (например: 1,3,5 или 1 3 5), или 'all' для выбора всех, или 'q' для выхода:\033[0m "
+            prompt = (
+                "\033[96m\n[?]\033[0m \033[92mВведите номера сессий для обработки через запятую или пробел "
+                "(например: 1,3,5 или 1 3 5), или 'all' для выбора всех, или 'q' для выхода:\033[0m \n"
+                "\033[96m └─>\033[0m \033[92m"
             )
-            user_input = input("\033[96m └─>\033[0m \033[92m\033[0m ").strip().lower()
+            user_input = (await asyncio.to_thread(input, prompt)).strip().lower()
             if user_input == "q":
                 print("Выход.")
                 return
@@ -182,7 +175,7 @@ async def process_sessions():
                     break
             if not invalid_input:
                 selected_indices = temp_indices
-                break  # Выходим из цикла while, если ввод корректен
+                break
         except ValueError:
             print("Ошибка ввода. Пожалуйста, введите числа.")
         except Exception as e:
@@ -197,22 +190,24 @@ async def process_sessions():
     for idx, fname in selected_files_map.items():
         print(f"- {fname} (Номер {idx+1})")
 
-    # 3. Обрабатываем каждую выбранную сессию
+    # 3. Обработка выбранных сессий
     processed_count = 0
     failed_count = 0
     tasks = []
-
     print("\nНачинаем обработку выбранных сессий...")
     for index in selected_indices:
         session_file = all_session_files[index]
         session_path = os.path.join(BASE_SESSION_DIR, session_file)
 
-        # Запрашиваем назначение
+        # Запрашиваем назначение асинхронно
         while True:
-            print(f"\033[96m[?]\033[0m \033[92m Для сессии '{session_file}': \033[0m ")
-            print("\033[96m[?]\033[0m \033[92m 1 - Парсинг\033[0m ")
-            print("\033[96m[?]\033[0m \033[92m 2 - Рассылка\033[0m ")
-            purpose_choice = input("\033[96m └─>\033[0m \033[92m\033[0m ").strip()
+            purpose_prompt = (
+                f"\033[96m[?]\033[0m \033[92m Для сессии '{session_file}':\033[0m \n"
+                "\033[96m[?]\033[0m \033[92m 1 - Парсинг\n"
+                "\033[96m[?]\033[0m \033[92m 2 - Рассылка\n"
+                "\033[96m └─>\033[0m \033[92m"
+            )
+            purpose_choice = (await asyncio.to_thread(input, purpose_prompt)).strip()
             if purpose_choice == "1":
                 purpose = "parsing"
                 target_dir = PARSING_SESSION_DIR
@@ -224,29 +219,30 @@ async def process_sessions():
             else:
                 print("Неверный выбор. Пожалуйста, введите 1 или 2.")
 
-        # Добавляем задачу проверки сессии в список
         async def check_and_process(s_path, s_purpose, t_dir, s_file_name):
             account_info = await check_session(s_path)
             if account_info:
-                # Перемещаем файл сессии
                 target_path = os.path.join(t_dir, s_file_name)
                 try:
-                    shutil.move(account_info["full_path"], target_path)
+                    # Перемещаем файл сессии в отдельном потоке, чтобы не блокировать event loop
+                    await asyncio.to_thread(
+                        shutil.move, account_info["full_path"], target_path
+                    )
                     logger.info(
                         f"[{account_info['session']}] Файл сессии перемещен в {t_dir}"
                     )
-
                     # Сохраняем аккаунт в БД
-                    create_account(
-                        string_session=account_info["session"],
+                    await create_account(
+                        string_session=account_info[
+                            "session"
+                        ],  # Используем только имя файла
                         phone=account_info["phone"],
                         purpose=s_purpose,
                     )
                     logger.info(
                         f"Аккаунт {account_info['phone']} ({account_info['session']}) успешно зарегистрирован как '{s_purpose}'."
                     )
-                    return True  # Успех
-
+                    return True
                 except OSError as e:
                     logger.error(
                         f"[{account_info['session']}] Не удалось переместить файл сессии из {account_info['full_path']} в {target_path}: {e}"
@@ -254,7 +250,7 @@ async def process_sessions():
                     print(
                         f"Ошибка: Не удалось переместить файл {s_file_name}. Подробности в логах."
                     )
-                    return False  # Неудача перемещения
+                    return False
                 except Exception as e:
                     logger.error(
                         f"[{account_info['session']}] Ошибка при сохранении в БД или другой операции: {e}",
@@ -263,8 +259,7 @@ async def process_sessions():
                     print(
                         f"Ошибка: Произошла ошибка при обработке аккаунта {s_file_name}. Подробности в логах."
                     )
-                    # Решаем, нужно ли пытаться переместить файл обратно или оставить как есть
-                    return False  # Неудача обработки
+                    return False
             else:
                 logger.warning(
                     f"Сессия из файла {s_file_name} не прошла проверку (невалидна, заблокирована или не авторизована). Файл не перемещен."
@@ -272,19 +267,15 @@ async def process_sessions():
                 print(
                     f"\033[96m[?]\033[0m \033[92m Предупреждение: Сессия {s_file_name} невалидна или не авторизована. Пропущена.\033[0m "
                 )
-                return None  # Сессия не прошла проверку
+                return None
 
         tasks.append(check_and_process(session_path, purpose, target_dir, session_file))
 
-    # 4. Запускаем асинхронные задачи и собираем результаты
-    results = await asyncio.gather(
-        *tasks, return_exceptions=True
-    )  # Ловим исключения из корутин
+    # 4. Запускаем все задачи одновременно и собираем результаты
+    results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    # 5. Подводим итоги
     for result in results:
         if isinstance(result, Exception):
-            # Если gather поймал исключение из самой корутины check_and_process
             logger.error(
                 f"Непредвиденная ошибка в задаче обработки сессии: {result}",
                 exc_info=result,
@@ -293,11 +284,8 @@ async def process_sessions():
         elif result is True:
             processed_count += 1
         elif result is False:
-            # Означает ошибку перемещения или записи в БД, но сессия была валидна
             failed_count += 1
         elif result is None:
-            # Означает, что сессия не прошла проверку check_session
-            # Не считаем это как ошибку обработки, просто пропуск
             pass
 
     print("\033[96m[?]\033[0m \033[92m \n--- Обработка завершена ---\033[0m ")

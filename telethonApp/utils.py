@@ -3,7 +3,7 @@ from db.services.crud import (
     get_all_message,
     delete_all_message,
     delete_all_leads,
-    get_all_leads
+    get_all_leads,
 )
 from loger_manager import setup_logger
 
@@ -31,13 +31,15 @@ async def cmd_delete_all_message():
     await delete_all_message()
     logger.warning("Все сообщения удалены из базы данных")
 
+
 async def cmd_delete_all_leads():
     await delete_all_leads()
     logger.warning("Таблица с лидами была очищена")
+
 
 async def cmd_get_lead_count():
     leads = await get_all_leads()
     if not leads:
         return
     count_lead = len(leads)
-    logger.info(f'Количество лидов в БД: {count_lead}')
+    logger.info(f"Количество лидов в БД: {count_lead}")

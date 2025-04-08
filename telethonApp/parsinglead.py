@@ -41,7 +41,7 @@ async def join_and_parse_group():
         print("\033[96m[?]\033[0m \033[92mВведите полную ссылку в группу:\033[0m ")
         GROUP_LINK = input("\033[96m └─>\033[0m \033[92m\033[0m ")
         
-        accounts = get_all_accounts_by_flag('parsing')
+        accounts = await get_all_accounts_by_flag('parsing')
         if not accounts:
             logger.error("Нет аккаунтов для парсинга. Проверьте статус аккаунтов в БД.")
             return
@@ -85,7 +85,7 @@ async def join_and_parse_group():
             phone = user.phone or "нет телефона"
             telegram_id = user.id
 
-            create_lead(
+            await create_lead(
                 username=username,
                 phone=phone,
                 telegram_id=telegram_id,

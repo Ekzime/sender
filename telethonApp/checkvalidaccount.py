@@ -105,7 +105,7 @@ async def check_and_sort_account():
     """
     async with get_db_async_session() as db:
         result = await db.execute(select(Account))
-        accounts_objs = await result.scalars().all()
+        accounts_objs = result.scalars().all()
         accounts = [
             {
                 "phone": acc.phone,
@@ -117,7 +117,7 @@ async def check_and_sort_account():
         ]
         if not accounts:
             logger.warning("В базе нет зарегистрированых аккаунтов!")
-        return accounts
+            return
     
     tasks = [check_account_on_valid(acc) for acc in accounts]
     results = await asyncio.gather(*tasks, return_exceptions=True)

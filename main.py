@@ -24,7 +24,7 @@ console = Console()
 
 async def banner_menu():
     ascii_banner = pyfiglet.figlet_format(" E X O D U S ")
-    print(f"\033[92m{ascii_banner} v1.0\033[0m")
+    print(f"\033[92m{ascii_banner} v1.2\033[0m")
     console.print(
         Panel.fit(
             "[bold green]load_acc[/] - Загрузить сессии с файла .session\n"

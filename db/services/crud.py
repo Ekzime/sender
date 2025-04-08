@@ -45,9 +45,7 @@ async def create_account(
 async def get_all_accounts_by_flag(purpose: str, status="live"):
     "Возвращает аккаунты все аккаунты по флагу purpose со статусом live"
     async with get_db_async_session() as db:
-        result = await db.execute(
-            select(Account).filter_by(status=status, purpose=purpose)
-        )
+        result = await db.execute(select(Account).where(Account.purpose == purpose, Account.status == status))
         obj = result.scalars().all()
         accounts = []
         for acc in obj:

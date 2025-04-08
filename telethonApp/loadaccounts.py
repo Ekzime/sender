@@ -5,34 +5,23 @@ import shutil
 from config import settings
 from loger_manager import setup_logger
 from db.services.crud import create_account as crud_create_account
+from telethon import TelegramClient
+from telethon.errors import UserDeactivatedBanError, AuthKeyError, SessionPasswordNeededError, FloodWaitError
 
-# --- Предполагается, что эти импорты у вас настроены ---
-# from config import settings
-# from loger_manager import setup_logger
-# from db.services.crud import create_account
-# -------------------------------------------------------
-
-# --- Заглушки для демонстрации ---
 class Settings:
     TELETHON_ID = settings.TELETHON_ID
     TELETHON_HASH = settings.TELETHON_HASH
 
 settings = Settings()
 
-def create_account(string_session: str, phone: str, purpose: str):
-    """Заглушка для функции добавления аккаунта в БД."""
-    crud_create_account(
+async def create_account(string_session: str, phone: str, purpose: str):
+    await crud_create_account(
         phone=phone,
         purpose=purpose,
         string_session=string_session
     )
     logger.info(f"[DB Stub] Добавление аккаунта: Телефон={phone}, Сессия={string_session}, Назначение={purpose}")
 
-    
-
-# Импортируем реальные классы Telethon
-from telethon import TelegramClient
-from telethon.errors import UserDeactivatedBanError, AuthKeyError, SessionPasswordNeededError, FloodWaitError
 
 # Настраиваем логгер
 logging.getLogger("telethon").setLevel(logging.CRITICAL)

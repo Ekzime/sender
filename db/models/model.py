@@ -1,14 +1,15 @@
-from sqlalchemy.orm import declarative_base, sessionmaker, session
+import asyncio
+from sqlalchemy.orm import declarative_base
 from sqlalchemy import (
     Enum,
     Text,
     String,
     Column,
     Integer,
-    create_engine,
 )
-from sqlalchemy.orm import declarative_base
 from config import settings
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 
 
 Base = declarative_base()
@@ -60,10 +61,14 @@ class Lead(Base):
 
 # Подключение к БД, создание фабрики сессий
 SQL_URL = settings.SQL_URL
-engine = create_engine(SQL_URL, echo=False)
+engine = create_async_engine(SQL_URL, echo=False)
 
-# Создаем все таблицы в базе данных
-Base.metadata.create_all(engine)
+# Создаем все таблицы в базе данных c асинхронным движком
+async def init_db(engine):
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 # Создание сессии для работы с базой данных
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+async_session_factory = async_sessionmaker(
+    bind=engine, expire_on_commit=False, class_=AsyncSession
+)

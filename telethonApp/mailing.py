@@ -1,5 +1,6 @@
-import asyncio
 import os
+import asyncio
+import aiofiles
 from random import choice
 from loger_manager import setup_logger
 from telethon import TelegramClient, errors
@@ -28,22 +29,18 @@ def get_session_file_path(account: dict) -> str:
     # Получаем путь к файлу сессии для аккаунта
     return os.path.join(SESSION_DIR, f"{account['string_session']}.session")
 
-
-def load_state(state_file='mailing_state.txt'):
-    # Загружаем сохранённое состояние рассылки (индекс аккаунта и ID последнего обработанного лида)
+async def load_state(state_file='mailing_state.txt'):
     if os.path.exists(state_file):
-        with open(state_file, 'r') as f:
-            line = f.readline().strip()
+        async with aiofiles.open(state_file, mode='r') as f:
+            line = (await f.readline()).strip()
             if line:
                 last_index, last_lead_id = line.split(',')
                 return int(last_index), int(last_lead_id)
     return 0, 0
 
-
-def save_state(current_index, last_lead_id, state_file='mailing_state.txt'):
-    # Сохраняем текущее состояние рассылки
-    with open(state_file, 'w') as f:
-        f.write(f"{current_index},{last_lead_id}")
+async def save_state(current_index, last_lead_id, state_file='mailing_state.txt'):
+    async with aiofiles.open(state_file, mode='w') as f:
+        await f.write(f"{current_index},{last_lead_id}")
 
 
 async def send_message():
@@ -63,19 +60,19 @@ async def send_message():
     ACCOUNT_TIMEOUT = int(account_timeout) if account_timeout else ACCOUNT_TIMEOUT
 
     # Получаем аккаунты, предназначенные для рассылки
-    accounts = get_all_accounts_by_flag(purpose='mailing')
+    accounts = await get_all_accounts_by_flag(purpose='mailing')
     if not accounts:
         logger.warning("Не найдено аккаунтов для рассылки.")
         return
 
     # Получаем лиды из базы
-    leads = get_all_leads()
+    leads = await get_all_leads()
     if not leads:
         logger.warning("Не найдено лидов для рассылки.")
         return
 
     # Получаем сообщения из базы
-    messages = get_all_message()
+    messages = await get_all_message()
     if not messages:
         logger.warning('В базе нет сообщений.')
         return
@@ -84,7 +81,7 @@ async def send_message():
     leads_since_last_message = 0  # Счетчик лидов, которым отправлено текущее сообщение
 
     # Загружаем состояние рассылки
-    current_account_index, last_processed_lead_id = load_state()
+    current_account_index, last_processed_lead_id = await load_state()
 
     total_accounts = len(accounts)
     total_leads = len(leads)
@@ -131,8 +128,8 @@ async def send_message():
                 # Отправляем сообщение лиду
                 await client.send_message(lead['username'], message_text)
                 # Обновляем счетчики отправок
-                update_account({'phone': account['phone']}, send_count_message=account.get('send_count_message', 0) + 1)
-                update_lead({'telegram_id': lead['telegram_id']}, message_count=lead['message_count'] + 1)
+                await update_account({'phone': account['phone']}, send_count_message=account.get('send_count_message', 0) + 1)
+                await update_lead({'telegram_id': lead['telegram_id']}, message_count=lead['message_count'] + 1)
                 logger.info(f"Отправлено {lead['username']} через {account['phone']}")
             except errors.FloodWaitError as e:
                 # Обработка ошибки FloodWait
@@ -150,7 +147,7 @@ async def send_message():
 
             lead_index += 1
             leads_since_last_message += 1
-            save_state(current_account_index, lead['telegram_id'])
+            await save_state(current_account_index, lead['telegram_id'])
 
             # Смена сообщения после указанного количества лидов
             if leads_since_last_message >= LEADS_PER_MESSAGE:

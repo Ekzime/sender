@@ -40,22 +40,26 @@ async def create_account(
             "string_session": new_acc.string_session,
             "f2a": new_acc.f2a,
         }
-    
-async def get_all_accounts_by_flag(purpose: str, status='live'):
+
+
+async def get_all_accounts_by_flag(purpose: str, status="live"):
     "Возвращает аккаунты все аккаунты по флагу purpose со статусом live"
     async with get_db_async_session() as db:
-        result  = await db.execute(select(Account).filter_by(status=status, purpose=purpose))
+        result = await db.execute(
+            select(Account).filter_by(status=status, purpose=purpose)
+        )
         obj = result.scalars().all()
         accounts = []
         for acc in obj:
-            accounts.append({
-                'phone': acc.phone,
-                'string_session': acc.string_session,
-                'purpose': acc.purpose,
-                'status': acc.status    
-            }) 
+            accounts.append(
+                {
+                    "phone": acc.phone,
+                    "string_session": acc.string_session,
+                    "purpose": acc.purpose,
+                    "status": acc.status,
+                }
+            )
         return accounts
-    
 
 
 async def update_account(acc, **kwargs):
@@ -73,11 +77,12 @@ async def update_account(acc, **kwargs):
             for k, v in kwargs.items():
                 setattr(db_acc, k, v)
             db_acc.updated_at = datetime.utcnow()
-            #logger.info(f"Аккаунт id={acc_phone} обновлён, поля={list(kwargs.keys())}")
+            # logger.info(f"Аккаунт id={acc_phone} обновлён, поля={list(kwargs.keys())}")
             return db_acc
         except Exception as e:
             logger.error(f"Ошибка при обновлении аккаунта: {e}")
             raise e
+
 
 # ---------------------------------------#
 #              CRUD Messages            #
@@ -89,22 +94,23 @@ async def create_message(text: str):
     async with get_db_async_session() as db:
         new_text = Message(text=text)
         db.add(new_text)
-        #logger.info("create_message: Сообщение для спама записано!")
+        # logger.info("create_message: Сообщение для спама записано!")
+
 
 async def get_all_message():
-    '''
-        Возвращает все сообщения из БД Messages
-    '''
+    """
+    Возвращает все сообщения из БД Messages
+    """
     async with get_db_async_session() as db:
         result = await db.execute(select(Message))
         all_messages = result.scalars().all()
-        return [{'text': message.text} for message in all_messages]
+        return [{"text": message.text} for message in all_messages]
 
 
 async def delete_all_message():
-    '''
-        Удаляет все в таблице Message
-    '''
+    """
+    Удаляет все в таблице Message
+    """
     async with get_db_async_session() as db:
         await db.execute(delete(Message))
 
@@ -133,7 +139,6 @@ async def create_lead(username: str, phone: str, telegram_id: str):
             return False
 
 
-
 async def update_lead(lead, **kwargs):
     """
     Обновляет параметры обьекта в таблице Lead
@@ -155,15 +160,16 @@ async def update_lead(lead, **kwargs):
             db_lead.updated_at = datetime.utcnow()
             logger.info(
                 f"update_lead: Аккаунт id={db_lead} обновлён, поля={list(kwargs.keys())}"
-            )   
+            )
             return db_lead
         except Exception as e:
             logger.error(f"update_lead: Ошибка при обновлении аккаунта: {e}")
             raise e
 
+
 async def get_all_leads():
     """
-        Возвращает список всех записей из таблицы Lead
+    Возвращает список всех записей из таблицы Lead
     """
     async with get_db_async_session() as db:
         result = await db.execute(select(Lead))
@@ -173,13 +179,16 @@ async def get_all_leads():
             return
         leads_list = []
         for lead in leads:
-            leads_list.append({
-                'username': lead.username,
-                'phone': lead.phone,
-                'telegram_id': lead.telegram_id,
-                'message_count': lead.message_count
-            })
+            leads_list.append(
+                {
+                    "username": lead.username,
+                    "phone": lead.phone,
+                    "telegram_id": lead.telegram_id,
+                    "message_count": lead.message_count,
+                }
+            )
         return leads_list
+
 
 async def delete_all_leads():
     """

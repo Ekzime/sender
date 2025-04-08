@@ -1,7 +1,7 @@
 import asyncio
 import sys
 from loger_manager import setup_logger
-from db.models.model import  engine, init_db
+from db.models.model import engine, init_db
 from telethonApp.loadaccounts import process_sessions
 from telethonApp.checkvalidaccount import check_and_sort_account
 from telethonApp.parsinglead import join_and_parse_group
@@ -14,16 +14,17 @@ from rich.panel import Panel
 from rich.prompt import Prompt
 import pyfiglet
 
-if sys.platform.startswith('win'):
+if sys.platform.startswith("win"):
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 logger = setup_logger()
 
 console = Console()
 
+
 async def banner_menu():
     ascii_banner = pyfiglet.figlet_format(" E X O D U S ")
-    print(f"\033[92m{ascii_banner} v1.0\033[0m")  
+    print(f"\033[92m{ascii_banner} v1.0\033[0m")
     console.print(
         Panel.fit(
             "[bold green]load_acc[/] - Загрузить сессии с файла .session\n"
@@ -40,6 +41,8 @@ async def banner_menu():
             border_style="cyan",
         )
     )
+
+
 # Начало работы
 async def main() -> None:
     console.clear()
@@ -66,7 +69,7 @@ async def main() -> None:
             await send_message()
         elif event == "del_lead":
             await cmd_delete_all_leads()
-        elif event == 'info_lead':
+        elif event == "info_lead":
             await cmd_get_lead_count()
         elif event == "q":
             break

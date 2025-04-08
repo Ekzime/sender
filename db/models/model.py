@@ -63,10 +63,12 @@ class Lead(Base):
 SQL_URL = settings.SQL_URL
 engine = create_async_engine(SQL_URL, echo=False)
 
+
 # Создаем все таблицы в базе данных c асинхронным движком
 async def init_db(engine):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
 
 # Создание сессии для работы с базой данных
 async_session_factory = async_sessionmaker(

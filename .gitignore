@@ -1,13 +1,26 @@
+# Сессии и временные данные
 *sessions/
+
+# Виртуальное окружение
 *venv/
+
+# TODO-файлы и мусор
 *TODO
+
+# Компилированные питонячие файлы
 *.pyc
 *.pyo
 *.pyd
 __pycache__/
+
+# Переменные окружения
 .env
 *.env
+
+# Конфиги IDE
 .idea/
 .vscode/
-*.gitignore
-*sh.drawio
+
+# Временные состояния
+*mailing_state.txt
+
